@@ -1,35 +1,17 @@
-'use strict';
-
-const fs = require('fs');
-const path = require('path');
 const Sequelize = require('sequelize');
-const basename = path.basename(__filename);
+const sequelize = require('../config/database');
+
 const db = {};
 
-const sequelize = new Sequelize({
-  dialect: 'sqlite',
-  storage: './database.sqlite' // база будет храниться рядом с проектом
-});
-
-fs
-  .readdirSync(__dirname)
-  .filter(file => {
-    return (file.indexOf('.') !== 0) &&
-      (file !== basename) &&
-      (file.slice(-3) === '.js');
-  })
-  .forEach(file => {
-    const model = require(path.join(__dirname, file))(sequelize, Sequelize.DataTypes);
-    db[model.name] = model;
-  });
-
-Object.keys(db).forEach(modelName => {
-  if (db[modelName].associate) {
-    db[modelName].associate(db);
-  }
-});
-
-db.sequelize = sequelize;
 db.Sequelize = Sequelize;
+db.sequelize = sequelize;
+
+// Подключаем модели
+db.User = require('./user');
+db.Card = require('./card');
+
+// Настраиваем связи
+db.User.hasMany(db.Card, { foreignKey: 'userId', onDelete: 'CASCADE' });
+db.Card.belongsTo(db.User, { foreignKey: 'userId' });
 
 module.exports = db;
