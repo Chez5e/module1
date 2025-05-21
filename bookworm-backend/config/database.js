@@ -1,8 +1,6 @@
 const { Sequelize } = require('sequelize');
-
 const sequelize = new Sequelize({
   dialect: 'sqlite',
-  storage: './bookworm.sqlite', // база создастся рядом с backend
+  storage: './bookworm.sqlite'  // или './data/bookworm.sqlite'
 });
-
 module.exports = sequelize;
