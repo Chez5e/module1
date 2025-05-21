@@ -1,41 +1,60 @@
-const express = require('express');
+import express from 'express';
 const router = express.Router();
-const { User } = require('../models'); // Подключаем модель User
+
+let users = []; // Простое хранилище пользователей (для теста)
 
 // Регистрация
-router.post('/register', async (req, res) => {
+router.post('/register', (req, res) => {
   const { fullName, phone, email, login, password } = req.body;
+
   if (!fullName || !phone || !email || !login || !password) {
-    return res.status(400).json({ message: 'Все поля обязательны' });
+    return res.status(400).json({ message: 'Заполните все поля' });
   }
-  try {
-    // Проверка, есть ли уже такой логин
-    const candidate = await User.findOne({ where: { login } });
-    if (candidate) {
-      return res.status(400).json({ message: 'Пользователь с таким логином уже существует' });
-    }
-    const user = await User.create({ fullName, phone, email, login, password });
-    res.status(201).json({ message: 'Регистрация успешна', user });
-  } catch (error) {
-    res.status(500).json({ message: 'Ошибка сервера при регистрации' });
+
+  // Проверка, что логин не занят
+  if (users.some(u => u.login === login)) {
+    return res.status(409).json({ message: 'Пользователь с таким логином уже существует' });
   }
+
+  const newUser = {
+    id: Date.now(),
+    fullName,
+    phone,
+    email,
+    login,
+    password, // В реальном приложении — хэшируй!
+  };
+
+  users.push(newUser);
+
+  // Возвращаем пользователя без пароля
+  const { password: _, ...userWithoutPassword } = newUser;
+  res.json({ user: userWithoutPassword });
 });
 
-// Логин
-router.post('/login', async (req, res) => {
+// Вход (логин)
+router.post('/login', (req, res) => {
   const { login, password } = req.body;
+
   if (!login || !password) {
-    return res.status(400).json({ message: 'Логин и пароль обязательны' });
+    return res.status(400).json({ message: 'Заполните все поля' });
   }
-  try {
-    const user = await User.findOne({ where: { login, password } }); // Просто для простоты, без хешей
-    if (!user) {
-      return res.status(401).json({ message: 'Неверный логин или пароль' });
-    }
-    res.json({ message: 'Успешный вход', user });
-  } catch (error) {
-    res.status(500).json({ message: 'Ошибка сервера при входе' });
+
+  const user = users.find(u => u.login === login && u.password === password);
+
+  if (!user) {
+    return res.status(401).json({ message: 'Неверный логин или пароль' });
   }
+
+  // Заглушка с книгами
+  const books = [
+    { id: 1, title: 'Война и мир', author: 'Толстой', type: 'Роман' },
+    { id: 2, title: 'Преступление и наказание', author: 'Достоевский', type: 'Роман' },
+  ];
+
+  const { password: _, ...userWithoutPassword } = user;
+
+  res.json({ user: userWithoutPassword, books });
 });
 
-module.exports = router;
+export default router;
